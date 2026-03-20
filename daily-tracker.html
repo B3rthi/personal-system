@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily — Suivi quotidien</title>
+<style>
+  :root {
+    --cream: #F3EDE3;
+    --cream-light: #FAF7F2;
+    --cream-dark: #E8E0D2;
+    --anthracite: #2C2C2E;
+    --anthracite-mid: #48484A;
+    --anthracite-soft: #6E6E73;
+    --anthracite-faint: #AEAEB2;
+    --card: rgba(255,255,255,0.72);
+    --card-border: rgba(44,44,46,0.08);
+    --shadow: 0 2px 20px rgba(44,44,46,0.08);
+    --shadow-deep: 0 8px 40px rgba(44,44,46,0.12);
+    --accent: #5C5047;
+    --accent-light: rgba(92,80,71,0.12);
+    --green: #4A7C59;
+    --green-light: rgba(74,124,89,0.12);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, "SF Pro Display", "SF Pro Text", BlinkMacSystemFont, sans-serif;
+    background: var(--cream);
+    color: var(--anthracite);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Layout ── */
+  .app {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    margin-bottom: 40px;
+  }
+  .header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  .greeting {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--anthracite-soft);
+    margin-bottom: 6px;
+  }
+  .date-title {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--anthracite);
+    line-height: 1.1;
+  }
+  .progress-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 40px;
+    padding: 10px 16px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .progress-ring {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+  .progress-ring svg {
+    transform: rotate(-90deg);
+  }
+  .progress-ring .track {
+    fill: none;
+    stroke: var(--cream-dark);
+    stroke-width: 3;
+  }
+  .progress-ring .fill {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.6s cubic-bezier(.4,0,.2,1);
+  }
+  .progress-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--anthracite);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--cream-dark);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 32px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 9px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--anthracite-soft);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    letter-spacing: -0.01em;
+  }
+  .tab-btn.active {
+    background: var(--cream-light);
+    color: var(--anthracite);
+    box-shadow: 0 1px 8px rgba(44,44,46,0.1);
+  }
+
+  /* ── Panel ── */
+  .panel { display: none; animation: fadeUp 0.3s ease; }
+  .panel.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Goal cards ── */
+  .goals-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+
+  .goal-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .goal-item:hover { transform: translateY(-1px); box-shadow: var(--shadow-deep); }
+  .goal-item:active { transform: scale(0.99); }
+
+  .goal-item.done {
+    background: rgba(255,255,255,0.5);
+    border-color: rgba(74,124,89,0.2);
+  }
+  .goal-item.done .goal-name { color: var(--anthracite-soft); text-decoration: line-through; text-decoration-color: var(--anthracite-faint); }
+
+  .check-circle {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--cream-dark);
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.25s cubic-bezier(.34,1.56,.64,1);
+  }
+  .goal-item.done .check-circle {
+    background: var(--green);
+    border-color: var(--green);
+    transform: scale(1.05);
+  }
+  .check-circle svg { opacity: 0; transition: opacity 0.2s ease; }
+  .goal-item.done .check-circle svg { opacity: 1; }
+
+  .goal-emoji { font-size: 20px; line-height: 1; }
+  .goal-name { font-size: 16px; font-weight: 500; letter-spacing: -0.01em; flex: 1; transition: color 0.2s; }
+
+  .delete-btn {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--anthracite-faint);
+    opacity: 0;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+  .goal-item:hover .delete-btn { opacity: 1; }
+  .delete-btn:hover { background: rgba(255,59,48,0.1); color: #FF3B30; }
+
+  .drag-handle {
+    width: 20px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; cursor: grab; opacity: 0;
+    color: var(--anthracite-faint);
+    transition: opacity 0.2s ease;
+  }
+  .drag-handle:active { cursor: grabbing; }
+  .goal-item:hover .drag-handle { opacity: 1; }
+  .goal-item.dragging { opacity: 0.35; transform: scale(0.98); }
+  .goal-item.drag-over { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(92,80,71,0.15), var(--shadow-deep); }
+
+  .edit-btn {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--anthracite-faint);
+    opacity: 0;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+  .goal-item:hover .edit-btn { opacity: 1; }
+  .edit-btn:hover { background: var(--accent-light); color: var(--accent); }
+
+  /* Inline edit mode */
+  .goal-item.editing {
+    flex-wrap: wrap;
+    gap: 10px;
+    cursor: default;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(92,80,71,0.12), var(--shadow);
+  }
+  .goal-item.editing:hover { transform: none; }
+  .edit-row {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+  }
+  .edit-emoji-btn {
+    width: 38px; height: 38px; border-radius: 9px;
+    border: 1.5px solid var(--cream-dark);
+    background: var(--cream-light); cursor: pointer; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.2s; flex-shrink: 0;
+  }
+  .edit-emoji-btn:hover { border-color: var(--anthracite-mid); }
+  .edit-name-input {
+    flex: 1; height: 38px;
+    border: 1.5px solid var(--cream-dark);
+    border-radius: 9px;
+    background: var(--cream-light);
+    padding: 0 12px;
+    font-size: 15px; font-weight: 500;
+    font-family: inherit; color: var(--anthracite);
+    outline: none; transition: border-color 0.2s;
+    letter-spacing: -0.01em;
+  }
+  .edit-name-input:focus { border-color: var(--anthracite-mid); }
+  .edit-save-btn {
+    height: 38px; padding: 0 14px;
+    border: none; border-radius: 9px;
+    background: var(--anthracite); color: var(--cream-light);
+    font-size: 13px; font-weight: 600; font-family: inherit;
+    cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+  }
+  .edit-save-btn:hover { background: var(--anthracite-mid); }
+  .edit-cancel-btn {
+    height: 38px; padding: 0 12px;
+    border: 1.5px solid var(--cream-dark); border-radius: 9px;
+    background: transparent; color: var(--anthracite-soft);
+    font-size: 13px; font-weight: 500; font-family: inherit;
+    cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+  }
+  .edit-cancel-btn:hover { border-color: var(--anthracite-mid); color: var(--anthracite); }
+  .edit-emoji-panel {
+    display: none; flex-direction: column; gap: 8px; width: 100%;
+    background: var(--cream-light); border-radius: 10px; padding: 10px;
+    border: 1px solid var(--cream-dark);
+  }
+  .edit-emoji-panel.open { display: flex; }
+  .edit-emoji-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+  .edit-custom-row { display: flex; gap: 8px; }
+  .edit-custom-input {
+    flex: 1; height: 32px;
+    border: 1.5px solid var(--cream-dark); border-radius: 7px;
+    background: white; padding: 0 10px;
+    font-size: 16px; font-family: inherit; color: var(--anthracite);
+    outline: none;
+  }
+  .edit-custom-input:focus { border-color: var(--anthracite-mid); }
+  .edit-custom-apply {
+    height: 32px; padding: 0 12px;
+    border: none; border-radius: 7px;
+    background: var(--anthracite); color: var(--cream-light);
+    font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+
+  /* ── Add goal form ── */
+  .add-form {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .add-form-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--anthracite-soft);
+    margin-bottom: 14px;
+  }
+  .add-form-row { display: flex; gap: 10px; }
+
+  .emoji-picker-btn {
+    width: 46px; height: 46px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--cream-dark);
+    background: var(--cream-light); cursor: pointer; font-size: 20px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .emoji-picker-btn:hover { border-color: var(--anthracite-mid); }
+
+  .goal-input {
+    flex: 1; height: 46px;
+    border: 1.5px solid var(--cream-dark);
+    border-radius: var(--radius-sm);
+    background: var(--cream-light);
+    padding: 0 14px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--anthracite);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .goal-input:focus { border-color: var(--anthracite-mid); }
+  .goal-input::placeholder { color: var(--anthracite-faint); }
+
+  .add-btn {
+    height: 46px; padding: 0 18px;
+    border: none; border-radius: var(--radius-sm);
+    background: var(--anthracite);
+    color: var(--cream-light);
+    font-size: 14px; font-weight: 600;
+    font-family: inherit; cursor: pointer;
+    transition: all 0.2s; flex-shrink: 0;
+    letter-spacing: -0.01em;
+  }
+  .add-btn:hover { background: var(--anthracite-mid); transform: translateY(-1px); }
+  .add-btn:active { transform: scale(0.98); }
+
+  /* Emoji panel */
+  .emoji-panel {
+    display: none; flex-direction: column; gap: 10px; margin-top: 12px;
+  }
+  .emoji-panel.open { display: flex; }
+  .emoji-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ep-emoji {
+    width: 36px; height: 36px; border-radius: 8px; border: none;
+    background: var(--cream-light); cursor: pointer; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .ep-emoji:hover { background: var(--cream-dark); }
+  .ep-emoji.selected { background: var(--accent-light); outline: 2px solid var(--accent); outline-offset: 1px; }
+  .emoji-custom-row {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .emoji-custom-input {
+    flex: 1; height: 36px;
+    border: 1.5px solid var(--cream-dark);
+    border-radius: 8px;
+    background: var(--cream-light);
+    padding: 0 12px;
+    font-size: 18px;
+    font-family: inherit;
+    color: var(--anthracite);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .emoji-custom-input:focus { border-color: var(--anthracite-mid); }
+  .emoji-custom-input::placeholder { font-size: 12px; color: var(--anthracite-faint); }
+  .emoji-custom-btn {
+    height: 36px; padding: 0 14px;
+    border: none; border-radius: 8px;
+    background: var(--anthracite); color: var(--cream-light);
+    font-size: 12px; font-weight: 600; font-family: inherit;
+    cursor: pointer; transition: background 0.2s; white-space: nowrap;
+  }
+  .emoji-custom-btn:hover { background: var(--anthracite-mid); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center; padding: 40px 20px; color: var(--anthracite-soft);
+  }
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; line-height: 1.5; }
+
+  /* ── Stats panel ── */
+  .stats-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .stats-title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .period-select {
+    border: 1.5px solid var(--cream-dark);
+    border-radius: 9px;
+    background: var(--cream-light);
+    padding: 7px 12px;
+    font-size: 13px; font-weight: 500;
+    font-family: inherit; color: var(--anthracite);
+    outline: none; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .period-select:focus { border-color: var(--anthracite-mid); }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    margin-bottom: 16px;
+  }
+  .chart-card-title {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--anthracite-soft);
+    margin-bottom: 20px;
+  }
+  canvas { width: 100% !important; display: block; }
+
+  .stat-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px; margin-bottom: 16px;
+  }
+  .stat-tile {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-sm);
+    padding: 18px 16px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    text-align: center;
+  }
+  .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; color: var(--anthracite); line-height: 1; margin-bottom: 6px; }
+  .stat-label { font-size: 11px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--anthracite-soft); }
+
+  .goals-breakdown {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .breakdown-title {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--anthracite-soft); margin-bottom: 16px;
+  }
+  .breakdown-item {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+  }
+  .breakdown-item:last-child { margin-bottom: 0; }
+  .breakdown-emoji { font-size: 18px; width: 24px; text-align: center; }
+  .breakdown-name { font-size: 14px; font-weight: 500; flex: 1; color: var(--anthracite); }
+  .breakdown-bar-bg {
+    width: 100px; height: 6px; border-radius: 3px;
+    background: var(--cream-dark); overflow: hidden;
+  }
+  .breakdown-bar-fill {
+    height: 100%; border-radius: 3px;
+    background: var(--accent);
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+  }
+  .breakdown-pct { font-size: 13px; font-weight: 600; color: var(--anthracite-soft); width: 36px; text-align: right; }
+
+  .no-data {
+    text-align: center; padding: 40px; color: var(--anthracite-faint);
+    font-size: 14px;
+  }
+
+  /* ── Past days panel ── */
+  .past-cards-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .past-day-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    overflow: hidden;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    cursor: pointer;
+    user-select: none;
+  }
+  .past-day-card:hover { box-shadow: var(--shadow-deep); transform: translateY(-1px); }
+  .past-day-card.open {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(92,80,71,0.1), var(--shadow-deep);
+  }
+
+  .past-day-header {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 10px;
+    padding: 28px 10px 26px;
+    text-align: center;
+  }
+  .past-day-name {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--anthracite-soft);
+  }
+  .past-day-date {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.01em;
+    color: var(--anthracite-faint);
+  }
+
+  /* Progress ring with % inside */
+  .past-ring-wrap {
+    position: relative; width: 52px; height: 52px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 4px;
+  }
+  .past-ring-wrap svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+  .past-ring-pct {
+    font-size: 11px; font-weight: 700; letter-spacing: -0.02em;
+    color: var(--anthracite); position: relative; z-index: 1;
+  }
+  .past-ring-pct.complete { color: var(--accent); }
+
+  /* Expanded goals below the cards */
+  .past-day-goals {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 18px;
+    flex-direction: column;
+    gap: 8px;
+    animation: fadeUp 0.25s ease;
+  }
+  .past-day-goals.open { display: flex; }
+
+  .past-goals-day-label {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--anthracite-soft);
+    margin-bottom: 4px;
+  }
+
+  .past-goal-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px;
+    background: var(--cream-light);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--card-border);
+    cursor: pointer; user-select: none;
+    transition: all 0.18s ease;
+  }
+  .past-goal-row:hover { background: var(--cream-dark); }
+  .past-goal-row.done-past { background: rgba(255,255,255,0.5); border-color: rgba(74,124,89,0.2); }
+  .past-goal-row.done-past .past-goal-name {
+    color: var(--anthracite-soft);
+    text-decoration: line-through;
+    text-decoration-color: var(--anthracite-faint);
+  }
+  .past-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid var(--cream-dark); background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.22s cubic-bezier(.34,1.56,.64,1);
+  }
+  .past-goal-row.done-past .past-check { background: var(--green); border-color: var(--green); }
+  .past-check svg { opacity: 0; transition: opacity 0.15s; }
+  .past-goal-row.done-past .past-check svg { opacity: 1; }
+  .past-goal-emoji { font-size: 17px; line-height: 1; }
+  .past-goal-name { font-size: 14px; font-weight: 500; flex: 1; color: var(--anthracite); transition: color 0.2s; }
+
+  /* Expanded goals below the cards */
+  .past-day-goals {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 18px;
+    flex-direction: column;
+    gap: 8px;
+    animation: fadeUp 0.25s ease;
+  }
+  .past-day-goals.open { display: flex; }
+
+  .past-goals-day-label {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--anthracite-soft);
+    margin-bottom: 4px;
+  }
+
+  .past-goal-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px;
+    background: var(--cream-light);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--card-border);
+    cursor: pointer; user-select: none;
+    transition: all 0.18s ease;
+  }
+  .past-goal-row:hover { background: var(--cream-dark); }
+  .past-goal-row.done-past { background: rgba(255,255,255,0.5); border-color: rgba(74,124,89,0.2); }
+  .past-goal-row.done-past .past-goal-name {
+    color: var(--anthracite-soft);
+    text-decoration: line-through;
+    text-decoration-color: var(--anthracite-faint);
+  }
+  .past-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid var(--cream-dark); background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.22s cubic-bezier(.34,1.56,.64,1);
+  }
+  .past-goal-row.done-past .past-check { background: var(--green); border-color: var(--green); }
+  .past-check svg { opacity: 0; transition: opacity 0.15s; }
+  .past-goal-row.done-past .past-check svg { opacity: 1; }
+  .past-goal-emoji { font-size: 17px; line-height: 1; }
+  .past-goal-name { font-size: 14px; font-weight: 500; flex: 1; color: var(--anthracite); transition: color 0.2s; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="greeting" id="greeting">Bonjour</div>
+        <div class="date-title" id="dateTitle">Chargement…</div>
+      </div>
+      <div class="progress-pill">
+        <div class="progress-ring">
+          <svg width="32" height="32" viewBox="0 0 32 32">
+            <circle class="track" cx="16" cy="16" r="13"/>
+            <circle class="fill" id="progressArc" cx="16" cy="16" r="13"
+              stroke-dasharray="81.68" stroke-dashoffset="81.68"/>
+          </svg>
+        </div>
+        <div class="progress-text" id="progressText">0%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('today')">Aujourd'hui</button>
+    <button class="tab-btn" onclick="switchTab('past')">Jours passés</button>
+    <button class="tab-btn" onclick="switchTab('stats')">Statistiques</button>
+  </div>
+
+  <!-- Today Panel -->
+  <div class="panel active" id="panel-today">
+    <div class="goals-list" id="goalsList"></div>
+
+    <div class="add-form">
+      <div class="add-form-title">Nouvel objectif récurrent</div>
+      <div class="add-form-row">
+        <button class="emoji-picker-btn" id="emojiBtn" onclick="toggleEmojiPanel()">🎯</button>
+        <input class="goal-input" id="goalInput" type="text" placeholder="Ex : Se brosser les dents…"
+          onkeydown="if(event.key==='Enter') addGoal()">
+        <button class="add-btn" onclick="addGoal()">Ajouter</button>
+      </div>
+      <div class="emoji-panel" id="emojiPanel">
+        <div class="emoji-grid" id="emojiGrid"></div>
+        <div class="emoji-custom-row">
+          <input class="emoji-custom-input" id="emojiCustomInput" type="text" placeholder="Colle un emoji personnalisé…" maxlength="4">
+          <button class="emoji-custom-btn" onclick="applyCustomEmoji()">Utiliser</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Past Days Panel -->
+  <div class="panel" id="panel-past">
+    <div class="past-cards-row" id="pastCardsRow"></div>
+    <div class="past-day-goals" id="pastGoalsPanel"></div>
+  </div>
+
+  <!-- Stats Panel -->
+  <div class="panel" id="panel-stats">
+    <div class="stats-header">
+      <div class="stats-title">Progression</div>
+      <select class="period-select" id="periodSelect" onchange="renderStats()">
+        <option value="7">7 jours</option>
+        <option value="14">14 jours</option>
+        <option value="30">30 jours</option>
+        <option value="60" selected>60 jours</option>
+      </select>
+    </div>
+
+    <div class="stat-grid" id="statGrid"></div>
+
+    <div class="chart-card">
+      <div class="chart-card-title">Complétion quotidienne (%)</div>
+      <canvas id="completionChart" height="160"></canvas>
+    </div>
+
+    <div class="goals-breakdown" id="goalsBreakdown">
+      <div class="breakdown-title">Par objectif</div>
+      <div id="breakdownList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Data helpers ──
+const EMOJIS = [
+  '⭐','🌟','🔥','💪','🧘','🏃','🚴','🧠','📚','✍️','🎯','🎸',
+  '🍎','💧','🛌','🪥','🌿','🎨','🎵','🏋️','🤸','☀️','🌙','🧹',
+  '🍳','📝','💻','🎮','🐾','❤️','🤝','🧘‍♂️','🏊','⚽','🎾','🧗',
+  '🥗','🫖','🍵','🥤','🦷','💊','🩺','🧴','🪑','🛁','🪞','📖',
+  '🗒️','✏️','🖊️','📅','⏰','🔔','💡','🎤','🎹','🌱','🪴','🌻',
+  '🍀','🦋','🐝','🌈','🏔️','🌊','🌅','🧩','♟️','🙏','😴','💆',
+  '🧖','👟','🎒','💼','🏡','🚗','🫁','🥳','😤','💅','🎻','🥁',
+];
+
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function loadGoals() {
+  try { return JSON.parse(localStorage.getItem('daily_goals')) || []; } catch { return []; }
+}
+function saveGoals(g) { localStorage.setItem('daily_goals', JSON.stringify(g)); }
+
+function loadCompletions() {
+  try { return JSON.parse(localStorage.getItem('daily_completions')) || {}; } catch { return {}; }
+}
+function saveCompletions(c) { localStorage.setItem('daily_completions', JSON.stringify(c)); }
+
+function getStartDate() {
+  let s = localStorage.getItem('daily_start');
+  if (!s) { s = today(); localStorage.setItem('daily_start', s); }
+  return s;
+}
+
+// Returns how many days have elapsed since startDate (0 = just started today)
+function daysSinceStart() {
+  const start = getStartDate();
+  const now = today();
+  const a = new Date(start), b = new Date(now);
+  return Math.round((b - a) / 86400000);
+}
+
+// Returns only goals that existed on a given date
+function goalsForDate(goals, date) {
+  const start = getStartDate();
+  return goals.filter(g => (g.createdAt || start) <= date);
+}
+
+function getTodayDone() {
+  const c = loadCompletions();
+  return c[today()] || [];
+}
+function setTodayDone(ids) {
+  const c = loadCompletions();
+  c[today()] = ids;
+  saveCompletions(c);
+}
+
+// ── Emoji picker ──
+let selectedEmoji = '🎯';
+function toggleEmojiPanel() {
+  const panel = document.getElementById('emojiPanel');
+  panel.classList.toggle('open');
+}
+function buildEmojiPanel() {
+  const grid = document.getElementById('emojiGrid');
+  grid.innerHTML = EMOJIS.map(e =>
+    `<button class="ep-emoji ${e===selectedEmoji?'selected':''}" onclick="selectEmoji('${e}')">${e}</button>`
+  ).join('');
+}
+function selectEmoji(e) {
+  selectedEmoji = e;
+  document.getElementById('emojiBtn').textContent = e;
+  buildEmojiPanel();
+  document.getElementById('emojiPanel').classList.remove('open');
+}
+function applyCustomEmoji() {
+  const input = document.getElementById('emojiCustomInput');
+  const val = input.value.trim();
+  if (!val) return;
+  const emoji = [...val][0];
+  if (emoji) { selectEmoji(emoji); input.value = ''; }
+}
+
+// ── Render today ──
+function renderToday() {
+  const goals = loadGoals();
+  const done = getTodayDone();
+  const list = document.getElementById('goalsList');
+
+  if (goals.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">✦</div><p>Aucun objectif pour l'instant.<br>Ajoute le tien ci-dessous.</p></div>`;
+  } else {
+    list.innerHTML = goals.map(g => {
+      const isDone = done.includes(g.id);
+      return `
+      <div class="goal-item ${isDone?'done':''}" id="goal-${g.id}"
+           draggable="true"
+           ondragstart="dragStart(event,'${g.id}')"
+           ondragover="dragOver(event,'${g.id}')"
+           ondragleave="dragLeave(event)"
+           ondrop="dragDrop(event,'${g.id}')"
+           ondragend="dragEnd(event)">
+        <div class="drag-handle" onclick="event.stopPropagation()">
+          <svg width="12" height="16" viewBox="0 0 12 16" fill="none">
+            <circle cx="4" cy="3" r="1.5" fill="currentColor"/>
+            <circle cx="8" cy="3" r="1.5" fill="currentColor"/>
+            <circle cx="4" cy="8" r="1.5" fill="currentColor"/>
+            <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+            <circle cx="4" cy="13" r="1.5" fill="currentColor"/>
+            <circle cx="8" cy="13" r="1.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="check-circle" onclick="toggleGoal('${g.id}')">
+          <svg width="13" height="10" viewBox="0 0 13 10" fill="none">
+            <path d="M1.5 5L5 8.5L11.5 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="goal-emoji" onclick="toggleGoal('${g.id}')">${g.emoji}</span>
+        <span class="goal-name" onclick="toggleGoal('${g.id}')">${escHtml(g.name)}</span>
+        <button class="edit-btn" onclick="startEdit(event,'${g.id}')">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <path d="M9.5 1.5L11.5 3.5L4.5 10.5H2.5V8.5L9.5 1.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="delete-btn" onclick="deleteGoal(event,'${g.id}')">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 2L12 12M12 2L2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>`;
+    }).join('');
+  }
+
+  updateProgress(goals, done);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function updateProgress(goals, done) {
+  const validDone = done.filter(id => goals.find(g => g.id === id));
+  const pct = goals.length ? Math.round((validDone.length / goals.length) * 100) : 0;
+  const circumference = 2 * Math.PI * 13; // ~81.68
+  const offset = circumference * (1 - pct / 100);
+  document.getElementById('progressArc').style.strokeDashoffset = offset;
+  document.getElementById('progressText').textContent = pct + '%';
+}
+
+function toggleGoal(id) {
+  const done = getTodayDone();
+  const idx = done.indexOf(id);
+  if (idx >= 0) done.splice(idx, 1); else done.push(id);
+  setTodayDone(done);
+  renderToday();
+}
+
+function addGoal() {
+  const input = document.getElementById('goalInput');
+  const name = input.value.trim();
+  if (!name) return;
+  const goals = loadGoals();
+  goals.push({ id: Date.now().toString(), emoji: selectedEmoji, name, createdAt: today() });
+  saveGoals(goals);
+  input.value = '';
+  selectedEmoji = '🎯';
+  document.getElementById('emojiBtn').textContent = '🎯';
+  buildEmojiPanel();
+  renderToday();
+}
+
+function deleteGoal(e, id) {
+  e.stopPropagation();
+  const goals = loadGoals().filter(g => g.id !== id);
+  saveGoals(goals);
+  renderToday();
+}
+
+// ── Inline Edit ──
+let editingEmoji = null;
+
+function startEdit(e, id) {
+  e.stopPropagation();
+  const goals = loadGoals();
+  const g = goals.find(x => x.id === id);
+  if (!g) return;
+  editingEmoji = g.emoji;
+
+  const item = document.getElementById('goal-' + id);
+  item.classList.add('editing');
+  item.setAttribute('draggable', 'false');
+
+  // Replace inner content with edit UI
+  item.innerHTML = `
+    <div class="edit-row">
+      <button class="edit-emoji-btn" id="editEmojiBtn-${id}" onclick="toggleEditEmojiPanel(event,'${id}')">${g.emoji}</button>
+      <input class="edit-name-input" id="editName-${id}" value="${escHtml(g.name)}"
+        onkeydown="if(event.key==='Enter') saveEdit('${id}'); if(event.key==='Escape') cancelEdit('${id}')">
+      <button class="edit-save-btn" onclick="saveEdit('${id}')">OK</button>
+      <button class="edit-cancel-btn" onclick="cancelEdit('${id}')">✕</button>
+    </div>
+    <div class="edit-emoji-panel" id="editEmojiPanel-${id}">
+      <div class="edit-emoji-grid" id="editEmojiGrid-${id}"></div>
+      <div class="edit-custom-row">
+        <input class="edit-custom-input" id="editCustomEmoji-${id}" type="text" placeholder="Emoji perso…" maxlength="4">
+        <button class="edit-custom-apply" onclick="applyEditCustomEmoji('${id}')">OK</button>
+      </div>
+    </div>`;
+
+  buildEditEmojiGrid(id);
+  document.getElementById('editName-' + id).focus();
+  document.getElementById('editName-' + id).select();
+}
+
+function buildEditEmojiGrid(id) {
+  const grid = document.getElementById('editEmojiGrid-' + id);
+  if (!grid) return;
+  grid.innerHTML = EMOJIS.map(e =>
+    `<button class="ep-emoji ${e===editingEmoji?'selected':''}" style="width:32px;height:32px;font-size:16px;"
+      onclick="setEditEmoji(event,'${id}','${e}')">${e}</button>`
+  ).join('');
+}
+
+function toggleEditEmojiPanel(e, id) {
+  e.stopPropagation();
+  document.getElementById('editEmojiPanel-' + id)?.classList.toggle('open');
+}
+
+function setEditEmoji(e, id, emoji) {
+  e.stopPropagation();
+  editingEmoji = emoji;
+  const btn = document.getElementById('editEmojiBtn-' + id);
+  if (btn) btn.textContent = emoji;
+  buildEditEmojiGrid(id);
+  document.getElementById('editEmojiPanel-' + id)?.classList.remove('open');
+}
+
+function applyEditCustomEmoji(id) {
+  const input = document.getElementById('editCustomEmoji-' + id);
+  const val = input?.value.trim();
+  if (!val) return;
+  const emoji = [...val][0];
+  if (emoji) { setEditEmoji({stopPropagation:()=>{}}, id, emoji); input.value = ''; }
+}
+
+function saveEdit(id) {
+  const nameInput = document.getElementById('editName-' + id);
+  const name = nameInput?.value.trim();
+  if (!name) return;
+  const goals = loadGoals();
+  const g = goals.find(x => x.id === id);
+  if (g) { g.name = name; g.emoji = editingEmoji || g.emoji; }
+  saveGoals(goals);
+  editingEmoji = null;
+  renderToday();
+}
+
+function cancelEdit(id) {
+  editingEmoji = null;
+  renderToday();
+}
+
+// ── Stats ──
+let chartInstance = null;
+
+function renderStats() {
+  const days = parseInt(document.getElementById('periodSelect').value);
+  const goals = loadGoals();
+  const completions = loadCompletions();
+  const startDate = getStartDate();
+
+  // Build date range: from today backwards up to `days`, but not before startDate
+  const dates = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if (key >= startDate) dates.push(key);
+  }
+
+  const pcts = dates.map(date => {
+    const eligible = goalsForDate(goals, date);
+    if (!eligible.length) return null; // no goals existed yet
+    const done = (completions[date] || []).filter(id => eligible.find(g => g.id === id));
+    return Math.round((done.length / eligible.length) * 100);
+  });
+
+  // Only include dates where at least one goal existed
+  const validPcts = pcts.filter(p => p !== null);
+  const avg = validPcts.length ? validPcts.reduce((a,b)=>a+b,0) / validPcts.length : 0;
+  const best = validPcts.length ? Math.max(...validPcts) : 0;
+  const streak = calcStreak(dates, completions, goals);
+
+  document.getElementById('statGrid').innerHTML = `
+    <div class="stat-tile"><div class="stat-value">${Math.round(avg)}%</div><div class="stat-label">Moyenne</div></div>
+    <div class="stat-tile"><div class="stat-value">${best}%</div><div class="stat-label">Meilleur</div></div>
+    <div class="stat-tile"><div class="stat-value">${streak}j</div><div class="stat-label">Série</div></div>
+  `;
+
+  // Chart (replace null with 0 for display)
+  const labels = dates.map(d => {
+    const parts = d.split('-');
+    return `${parts[2]}/${parts[1]}`;
+  });
+  drawChart(labels, pcts.map(p => p === null ? 0 : p));
+
+  // Breakdown — only count dates where the goal existed
+  const breakdownList = document.getElementById('breakdownList');
+  if (goals.length === 0) {
+    breakdownList.innerHTML = '<div class="no-data">Aucun objectif enregistré.</div>';
+    return;
+  }
+  breakdownList.innerHTML = goals.map(g => {
+    const start = getStartDate();
+    const eligibleDates = dates.filter(d => (g.createdAt || start) <= d);
+    const count = eligibleDates.filter(d => (completions[d]||[]).includes(g.id)).length;
+    const pct = eligibleDates.length ? Math.round((count / eligibleDates.length) * 100) : 0;
+    return `
+    <div class="breakdown-item">
+      <span class="breakdown-emoji">${g.emoji}</span>
+      <span class="breakdown-name">${escHtml(g.name)}</span>
+      <div class="breakdown-bar-bg"><div class="breakdown-bar-fill" style="width:${pct}%"></div></div>
+      <span class="breakdown-pct">${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+function calcStreak(dates, completions, goals) {
+  let streak = 0;
+  for (let i = dates.length - 1; i >= 0; i--) {
+    const eligible = goalsForDate(goals, dates[i]);
+    if (!eligible.length) break;
+    const done = (completions[dates[i]]||[]).filter(id => eligible.find(g => g.id === id));
+    if (done.length === eligible.length) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function drawChart(labels, data) {
+  const canvas = document.getElementById('completionChart');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.parentElement.clientWidth - 48;
+  const h = 160;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0,0,w,h);
+
+  const pad = { top: 10, right: 16, bottom: 32, left: 36 };
+  const cw = w - pad.left - pad.right;
+  const ch = h - pad.top - pad.bottom;
+  const n = data.length;
+
+  // Gridlines
+  ctx.strokeStyle = 'rgba(44,44,46,0.06)';
+  ctx.lineWidth = 1;
+  [0,25,50,75,100].forEach(v => {
+    const y = pad.top + ch * (1 - v/100);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+cw, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(110,110,115,0.7)';
+    ctx.font = `500 10px -apple-system, SF Pro Text, sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.fillText(v+'%', pad.left - 6, y + 3.5);
+  });
+
+  if (n < 2) return;
+
+  const xStep = cw / (n - 1);
+  const pts = data.map((v, i) => ({ x: pad.left + i * xStep, y: pad.top + ch * (1 - v/100) }));
+
+  // Area fill
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + ch);
+  grad.addColorStop(0, 'rgba(92,80,71,0.18)');
+  grad.addColorStop(1, 'rgba(92,80,71,0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pad.top + ch);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length-1].x, pad.top + ch);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) {
+    const mx = (pts[i-1].x + pts[i].x) / 2;
+    ctx.bezierCurveTo(mx, pts[i-1].y, mx, pts[i].y, pts[i].x, pts[i].y);
+  }
+  ctx.strokeStyle = 'rgba(92,80,71,0.85)';
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Dots
+  pts.forEach(p => {
+    ctx.beginPath(); ctx.arc(p.x, p.y, 3.5, 0, Math.PI*2);
+    ctx.fillStyle = '#5C5047'; ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2);
+    ctx.fillStyle = '#F3EDE3'; ctx.fill();
+  });
+
+  // X labels (show subset)
+  ctx.fillStyle = 'rgba(110,110,115,0.9)';
+  ctx.font = `500 10px -apple-system, SF Pro Text, sans-serif`;
+  ctx.textAlign = 'center';
+  const step = Math.ceil(n / 7);
+  labels.forEach((lbl, i) => {
+    if (i % step === 0 || i === n-1) {
+      ctx.fillText(lbl, pts[i].x, pad.top + ch + 20);
+    }
+  });
+}
+
+// ── Tabs ──
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active',
+      (i===0 && tab==='today') ||
+      (i===1 && tab==='past') ||
+      (i===2 && tab==='stats')
+    );
+  });
+  document.getElementById('panel-today').classList.toggle('active', tab==='today');
+  document.getElementById('panel-past').classList.toggle('active', tab==='past');
+  document.getElementById('panel-stats').classList.toggle('active', tab==='stats');
+  if (tab==='stats') renderStats();
+  if (tab==='past') renderPast();
+}
+
+// ── Past days ──
+let openPastKey = null;
+
+function renderPast() {
+  const goals = loadGoals();
+  const completions = loadCompletions();
+  const dayNames = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const row = document.getElementById('pastCardsRow');
+
+  const elapsed = Math.min(daysSinceStart(), 5);
+
+  if (elapsed === 0) {
+    row.innerHTML = `<div class="no-data" style="grid-column:1/-1;padding:40px 0;">Les jours passés apparaîtront<br>à partir de demain.</div>`;
+    document.getElementById('pastGoalsPanel').classList.remove('open');
+    return;
+  }
+
+  if (goals.length === 0) {
+    row.innerHTML = `<div class="no-data" style="grid-column:1/-1">Aucun objectif enregistré.</div>`;
+    return;
+  }
+
+  let html = '';
+  const keys = [];
+  for (let i = elapsed; i >= 1; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    keys.push(key);
+    const eligible = goalsForDate(goals, key);
+    const done = (completions[key] || []).filter(id => eligible.find(g => g.id === id));
+    const pct = eligible.length ? Math.round((done.length / eligible.length) * 100) : 0;
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yy = String(d.getFullYear()).slice(2);
+    const isOpen = openPastKey === key;
+
+    const circumference = 2 * Math.PI * 22; // r=22
+    const offset = circumference * (1 - pct / 100);
+    const strokeColor = '#5C5047';
+
+    html += `
+    <div class="past-day-card ${isOpen?'open':''}" id="past-card-${key}" onclick="togglePastCard('${key}')">
+      <div class="past-day-header">
+        <div class="past-day-name">${dayNames[d.getDay()]}</div>
+        <div class="past-day-date">${dd}/${mm}/${yy}</div>
+        <div class="past-ring-wrap">
+          <svg width="52" height="52" viewBox="0 0 52 52">
+            <circle cx="26" cy="26" r="22" fill="none" stroke="var(--cream-dark)" stroke-width="3.5"/>
+            <circle cx="26" cy="26" r="22" fill="none" stroke="${strokeColor}"
+              stroke-width="3.5" stroke-linecap="round"
+              stroke-dasharray="${circumference.toFixed(2)}"
+              stroke-dashoffset="${offset.toFixed(2)}"
+              transform="rotate(-90 26 26)"/>
+          </svg>
+          <span class="past-ring-pct ">${pct}%</span>
+        </div>
+      </div>
+    </div>`;
+  }
+  row.innerHTML = html;
+  renderPastGoals();
+}
+
+function togglePastCard(key) {
+  openPastKey = openPastKey === key ? null : key;
+  renderPast();
+}
+
+function renderPastGoals() {
+  const panel = document.getElementById('pastGoalsPanel');
+  if (!openPastKey) { panel.classList.remove('open'); return; }
+
+  const goals = loadGoals();
+  const completions = loadCompletions();
+  const eligible = goalsForDate(goals, openPastKey);
+  const done = (completions[openPastKey] || []).filter(id => eligible.find(g => g.id === id));
+  const parts = openPastKey.split('-');
+  const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+  const dayNames = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const monthNames = ['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];
+  const label = `${dayNames[d.getDay()]} ${d.getDate()} ${monthNames[d.getMonth()]}`;
+
+  if (!eligible.length) {
+    panel.innerHTML = `<div class="past-goals-day-label">${label}</div><div class="no-data" style="padding:16px 0;">Aucun objectif n'existait ce jour-là.</div>`;
+    panel.classList.add('open');
+    return;
+  }
+
+  const rows = eligible.map(g => {
+    const isDone = done.includes(g.id);
+    return `
+    <div class="past-goal-row ${isDone?'done-past':''}" onclick="togglePastGoal('${openPastKey}','${g.id}')">
+      <div class="past-check">
+        <svg width="11" height="8" viewBox="0 0 11 8" fill="none">
+          <path d="M1 4L4 7L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="past-goal-emoji">${g.emoji}</span>
+      <span class="past-goal-name">${escHtml(g.name)}</span>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `<div class="past-goals-day-label">${label}</div>${rows}`;
+  panel.classList.add('open');
+}
+
+function togglePastGoal(dateKey, goalId) {
+  const completions = loadCompletions();
+  const done = completions[dateKey] || [];
+  const idx = done.indexOf(goalId);
+  if (idx >= 0) done.splice(idx, 1); else done.push(goalId);
+  completions[dateKey] = done;
+  saveCompletions(completions);
+  renderPast();
+}
+
+// ── Header date ──
+function setHeader() {
+  const now = new Date();
+  const h = now.getHours();
+  const greet = h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir';
+  document.getElementById('greeting').textContent = greet;
+  const days = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  document.getElementById('dateTitle').textContent =
+    `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`;
+}
+
+// ── Drag & Drop ──
+let dragSrcId = null;
+function dragStart(e, id) {
+  dragSrcId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => document.getElementById('goal-'+id)?.classList.add('dragging'), 0);
+}
+function dragOver(e, id) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  if (id !== dragSrcId) {
+    document.querySelectorAll('.goal-item').forEach(el => el.classList.remove('drag-over'));
+    document.getElementById('goal-'+id)?.classList.add('drag-over');
+  }
+}
+function dragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+function dragDrop(e, targetId) {
+  e.preventDefault();
+  if (!dragSrcId || dragSrcId === targetId) return;
+  const goals = loadGoals();
+  const srcIdx = goals.findIndex(g => g.id === dragSrcId);
+  const tgtIdx = goals.findIndex(g => g.id === targetId);
+  const [moved] = goals.splice(srcIdx, 1);
+  goals.splice(tgtIdx, 0, moved);
+  saveGoals(goals);
+  renderToday();
+}
+function dragEnd(e) {
+  document.querySelectorAll('.goal-item').forEach(el => {
+    el.classList.remove('dragging', 'drag-over');
+  });
+  dragSrcId = null;
+}
+
+// ── Init ──
+getStartDate(); // register start date on first launch
+buildEmojiPanel();
+setHeader();
+renderToday();
+</script>
+</body>
+</html>
