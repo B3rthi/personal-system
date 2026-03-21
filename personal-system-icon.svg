@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1C1C1E"/>
+      <stop offset="100%" style="stop-color:#141416"/>
+    </linearGradient>
+    <filter id="starGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- App background -->
+  <rect width="1024" height="1024" rx="224" ry="224" fill="url(#bgGrad)"/>
+  <rect width="1024" height="1024" rx="224" ry="224" fill="none" stroke="#3A3A3C" stroke-width="1.5" opacity="0.8"/>
+
+  <!-- Progress ring track -->
+  <circle cx="512" cy="512" r="392" fill="none" stroke="rgba(196,168,130,0.10)" stroke-width="26"/>
+
+  <!-- Progress arc ~75% — en terracotta -->
+  <circle cx="512" cy="512" r="392"
+    fill="none"
+    stroke="#8B3A1A"
+    stroke-width="26"
+    stroke-linecap="round"
+    stroke-dasharray="2463.01"
+    stroke-dashoffset="615.75"
+    transform="rotate(-90 512 512)"
+  />
+
+  <!-- Constellation lines -->
+  <line x1="512" y1="310" x2="370" y2="440" stroke="rgba(196,120,60,0.30)" stroke-width="8" stroke-linecap="round"/>
+  <line x1="512" y1="310" x2="640" y2="420" stroke="rgba(196,120,60,0.30)" stroke-width="8" stroke-linecap="round"/>
+  <line x1="370" y1="440" x2="430" y2="590" stroke="rgba(196,120,60,0.30)" stroke-width="8" stroke-linecap="round"/>
+  <line x1="640" y1="420" x2="600" y2="580" stroke="rgba(196,120,60,0.30)" stroke-width="8" stroke-linecap="round"/>
+  <line x1="430" y1="590" x2="512" y2="690" stroke="rgba(196,120,60,0.30)" stroke-width="8" stroke-linecap="round"/>
+  <line x1="600" y1="580" x2="512" y2="690" stroke="rgba(196,120,60,0.30)" stroke-width="8" stroke-linecap="round"/>
+  <line x1="370" y1="440" x2="600" y2="580" stroke="rgba(196,120,60,0.15)" stroke-width="6" stroke-linecap="round" stroke-dasharray="18 14"/>
+
+  <!-- Stars — couleurs Sunset -->
+  <!-- A top — rouille foncé #8B3A1A -->
+  <circle cx="512" cy="310" r="26" fill="#8B3A1A" filter="url(#starGlow)"/>
+  <circle cx="512" cy="310" r="13" fill="#C4622A"/>
+
+  <!-- B mid-left — terracotta #C4622A -->
+  <circle cx="370" cy="440" r="20" fill="#7A3015" filter="url(#starGlow)"/>
+  <circle cx="370" cy="440" r="10" fill="#C4622A"/>
+
+  <!-- C mid-right — orange cuivré #D4844A -->
+  <circle cx="640" cy="420" r="22" fill="#A04A20" filter="url(#starGlow)"/>
+  <circle cx="640" cy="420" r="11" fill="#D4844A"/>
+
+  <!-- D lower-left — brun #6B2E12 -->
+  <circle cx="430" cy="590" r="16" fill="#6B2E12" filter="url(#starGlow)"/>
+  <circle cx="430" cy="590" r="8" fill="#B05830"/>
+
+  <!-- E lower-right — saumon #E0A070 -->
+  <circle cx="600" cy="580" r="19" fill="#A85A28" filter="url(#starGlow)"/>
+  <circle cx="600" cy="580" r="9" fill="#E0A070"/>
+
+  <!-- F bottom — pêche clair #EAB88A -->
+  <circle cx="512" cy="690" r="24" fill="#C47040" filter="url(#starGlow)"/>
+  <circle cx="512" cy="690" r="12" fill="#EAB88A"/>
+
+  <!-- Tiny ambient stars -->
+  <circle cx="300" cy="360" r="4" fill="#C4622A" opacity="0.45"/>
+  <circle cx="720" cy="330" r="3" fill="#D4844A" opacity="0.40"/>
+  <circle cx="680" cy="650" r="3.5" fill="#E0A070" opacity="0.40"/>
+  <circle cx="340" cy="640" r="3" fill="#C4622A" opacity="0.35"/>
+  <circle cx="500" cy="490" r="2.5" fill="#EAB88A" opacity="0.30"/>
+
+</svg>
